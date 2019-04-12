@@ -1,6 +1,6 @@
-#ifndef BEAR_PARSER_H
-#define BEAR_PARSER_H
+#ifndef GRIZZLY_PARSER_H
+#define GRIZZLY_PARSER_H
 
 void parse(const char* str);
 
-#endif //BEAR_PARSER_H
+#endif //GRIZZLY_PARSER_H

@@ -91,7 +91,7 @@ typedef struct {
 
 
 int main() {
-    parse("a1");
+    parse("+=");
 
     return EXIT_SUCCESS;
 }

@@ -1,4 +1,4 @@
-#ifndef BEAR_TYPES_H
-#define BEAR_TYPES_H
+#ifndef GRIZZLY_TYPES_H
+#define GRIZZLY_TYPES_H
 
-#endif //BEAR_TYPES_H
+#endif //GRIZZLY_TYPES_H
