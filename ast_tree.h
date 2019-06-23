@@ -1,6 +1,0 @@
-#ifndef GRIZZLY_AST_TREE_H
-#define GRIZZLY_AST_TREE_H
-
-
-
-#endif //GRIZZLY_AST_TREE_H

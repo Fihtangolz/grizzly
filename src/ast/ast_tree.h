@@ -1,7 +1,11 @@
-#include <stdio.h>
-#include <yara.h>
-#include <unistring/stdbool.h>
-#include "parser.h"
+#ifndef GRIZZLY_AST_TREE_H
+#define GRIZZLY_AST_TREE_H
+
+#include <stddef.h>
+
+typedef struct {
+
+} ast_tree_t;
 
 typedef struct {
     char* identifier;
@@ -13,10 +17,13 @@ typedef struct {
     enumerator_t* enumerator_list;
 } enum_t;
 
-//Restore implicit enum's constant values
-void do_numbering(enum_t* target) {
+typedef struct {
+    char** errors;
+} compile_errors_t;
 
-}
+typedef struct {
+
+} generic_selection_t;
 
 typedef struct {
     //type_t
@@ -24,8 +31,8 @@ typedef struct {
 } type_alias_t;
 
 typedef enum {
-   INLINE,
-   NORETURN
+    INLINE,
+    NORETURN
 } func_specifier_t;
 
 typedef struct {
@@ -67,31 +74,18 @@ typedef struct {
 typedef struct {
     char* identifier;
 //    type_t
-};
+} variable_t;
 
 typedef struct {
 //    expression
     char* message;
 } static_assertion_t;
 
-//bool is_constant_expression(const conditional_expression_t* target) {
-    //TODO: implementation
-//}
+typedef enum {
+    CONST_QUALIFIER,
+    RESTRICT_QUALIFIER,
+    VOLATILE_QUALIFIER,
+    ATOMIC_QUALIFIER,
+} type_qualifier_t;
 
-bool is_assert() {
-    bool result = false;//calc(expression);
-    if(!result) {
-        return true;
-    }
-}
-
-typedef struct {
-    char** errors;
-} compile_errors;
-
-
-int main() {
-    parse("+=");
-
-    return EXIT_SUCCESS;
-}
+#endif //GRIZZLY_AST_TREE_H
