@@ -3,5 +3,9 @@ project(grizzly)
 
 set(CMAKE_C_STANDARD 11)
 
-set(SOURCE_FILES main.c parser.c parser.h types.h types.c ast_tree.h ast_tree.c)
-add_executable(grizzly ${SOURCE_FILES} types.h ast_tree.h)
+file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/src/*.[c,h])
+foreach(source_file ${source_files})
+    message("Found file to build: " ${source_file})
+endforeach()
+
+add_executable(grizzly ${source_files})
