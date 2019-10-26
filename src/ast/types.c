@@ -1,6 +1,6 @@
 #include "types.h"
-#include <unistring/stdbool.h>
-#include <z3.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     CONST    = 0b10000000,
@@ -8,18 +8,6 @@ typedef enum {
     VOLATILE = 0b00100000,
     ATOMIC   = 0b00010000,
 } qualifier_t;
-
-typedef enum {
-    BOOL,
-    CHAR,
-    INT,
-    FLOAT,
-    DOUBLE,
-
-    FLOAT_COMPLEX,
-    DOUBLE_COMPLEX,
-    LONG_DOUBLE_COMPLEX,
-} fundamental_type_t;
 
 typedef struct {
     uint8_t qualifiers;

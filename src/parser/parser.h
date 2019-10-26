@@ -3,6 +3,6 @@
 
 #include "../ast/ast_tree.h"
 
-ast_tree_t parse(const char* str);
+void parse(const char* str);
 
 #endif //GRIZZLY_PARSER_H

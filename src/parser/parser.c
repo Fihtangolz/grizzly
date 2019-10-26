@@ -1,6 +1,6 @@
-#include <unistring/stdbool.h>
-#include <ntsid.h>
-#include <yara.h>
+#include <stdbool.h>
+#include <setjmp.h>
+#include <sys/param.h>
 #include "parser.h"
 #include "../ast/ast_tree.h"
 
@@ -222,7 +222,7 @@ generic_selection_t* is_generic_selection(const char* str) {
     }
 }
 
-enum_t* is_enum_specifier(const char* str) {
+enum_specifier_t* is_enum_specifier(const char* str) {
     pstring_t a = {4, (char[]){'e','n','u','m'}};
     bool flag1 = memcpr(str, a.size, a.body);
     str += a.size;
@@ -289,16 +289,6 @@ void is_comment(const char** str) {
             ml_comment = false;
         }
     }
-}
-
-bool is_storage_class_specifier() {
-    pstring_t a = {7, (char[]){'t', 'y', 'p', 'e', 'd', 'e', 'f'}};
-    pstring_t a1 = {6, (char[]){'e', 'x', 't', 'e', 'r', 'n'}};
-    pstring_t a2 = {6, (char[]){'s', 't', 'a', 't', 'i', 'c'}};
-    pstring_t a3 = {13, (char[]){'_', 'T', 'h', 'r', 'e', 'a', 'd', '_', 'l', 'o', 'c', 'a', 'l'}};
-    pstring_t a4 = {4, (char[]){'a', 'u', 't', 'o'}};
-    pstring_t a5 = {8, (char[]){'r', 'e', 'g', 'i', 's', 't', 'e', 'r'}};
-
 }
 
 bool is_string_literal() {
@@ -386,24 +376,65 @@ bool is_declaration(const char** str) {
     
 }
 
-bool is_function_defenition() {
+storage_specifier_t* is_storage_class_specifier(const char* str) {
+    typedef struct {
+        pstring_t pattern;
+        storage_specifier_t storage_class_specifier;
+    } compliance_t;
 
+    compliance_t patterns[] = {
+            {
+                { 7, (char[]) {'t', 'y', 'p', 'e', 'd', 'e', 'f'}},
+                TYPEDEF_SPECIFIER,
+            },
+            {
+                { 6, (char[]) {'e', 'x', 't', 'e', 'r', 'n'}},
+                EXTERN_SPECIFIER,
+            },
+            {
+                { 6, (char[]) {'s', 't', 'a', 't', 'i', 'c'}},
+                STATIC_SPECIFIER,
+            },
+            {
+                { 13, (char[]) {'_', 'T', 'h', 'r', 'e', 'a', 'd', '_', 'l', 'o', 'c', 'a', 'l'}},
+                THREAD_LOCAL_SPECIFIER,
+            },
+            {
+                { 4, (char[]) {'a', 'u', 't', 'o'}},
+                AUTO_SPECIFIER,
+            },
+            {
+                { 8, (char[]) {'r', 'e', 'g', 'i', 's', 't', 'e', 'r'}},
+                REGISTER_SPECIFIER
+            }
+    };
+
+    for(const compliance_t* p = patterns; p < patterns+(sizeof(patterns)/sizeof(compliance_t)+1); ++p){
+        if(memcpr(str, p->pattern.size, p->pattern.body)) {
+            return &p->storage_class_specifier;
+        }
+    }
+
+    return NULL;
+}
+
+bool is_declaration_specifier() {
+    return is_storage_class_specifier() || is_type_specifier() || is_type_qualifier();
+}
+
+bool is_function_definition() {
+    return is_declaration_specifier(); is_declarator(); is_declaration(); is_compound_statement();
 }
 
 bool is_external_declaration(const char* str) {
-    pstring_t a = {8, (char[]){'e','n','u','m'}};
-    bool flag1 = memcpr(str, a.size, a.body);
-    char* identifier = is_identifier(str);
-    if(!identifier) {
-
-    }
+    return is_function_definition(str) || is_declaration(str);
 }
 
-bool is_translation_unit(const char* str) {
-    is_external_declaration(str);
-    //translation-unit external-declaration
+bool parse_translation_unit(const char* str) {
+    while(is_external_declaration(str)){}
 }
 
-ast_tree_t parse(const char* str) {
-    
+void parse(const char* str) {
+
 }
+
