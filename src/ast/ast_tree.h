@@ -4,11 +4,17 @@
 #include <stddef.h>
 
 typedef enum {
-//
+    IDENTIFIER_STMT,
     COMPOUND_STMT,
     STRUCTURE,
     UNION,
     ENUMERATION,
+    ALIGNMENT_SPEC,
+//Constants
+    INT_CONST_STMT,
+    FLOAT_CONST_STMT,
+    CHAR_CONST_STMT,
+    STR_CONST_STMT,
 //Labeled statement
     LABELED_STMT,
     CASE_STMT,
@@ -86,52 +92,52 @@ typedef enum {
 
 #define BASE_NODE_LAYOUT node_type_t node_type;
 
-typedef struct {
+struct base_node_t {
     node_type_t node_type;
-} base_node_t;
+};
 
-typedef struct {
+union declaration_t {
+    //TODO: Other
+    struct static_assert_t* static_assert;
+};
+
+struct translation_unit_t {
     struct func_definition_t** func_definitions;
-    void* declarations;
-} translation_unit_t;
+    union declaration_t** declarations;
+};
 
-typedef enum {
-    INLINE,
-    NORETURN
-} func_specifier_t;
-
-typedef struct {
+struct array_type_t {
     BASE_NODE_LAYOUT
     void* type;
     void* expr; //constant-expression repr length
-} array_type_t;
+};
 
-typedef struct {
+struct struct_el_t {
     void* type;
     char* identifier;
-} struct_el_t;
+};
 
-typedef struct {
+struct bitfield_el_t {
     void* type;
     char* identifier;
     void* expr; //constant-expression repr width
-} bitfield_el_t;
+};
 
-typedef struct {
+struct type_alias_t {
     BASE_NODE_LAYOUT
     void* type;
     char* new_identifier;
-} type_alias_t;
+};
 
-typedef struct {
+struct signature_t {
     void* ret_type;
     void* params;
-} signature_t;
+};
 
 typedef struct {
     BASE_NODE_LAYOUT
-    signature_t signature;
-    statement_t** body;
+    struct signature_t signature;
+//    statement_t** body;
 } func_definition_t;
 
 typedef struct {
@@ -141,13 +147,7 @@ typedef struct {
 } variable_t;
 
 typedef struct {
-    BASE_NODE_LAYOUT
-    void* constant_expression;
-    char* string_literal;
-} static_assert_declaration_t;
-
-typedef struct {
-    type_qualifier_t qualifier;
+//    type_qualifier_t qualifier;
 
 } pointer_t;
 
@@ -155,180 +155,234 @@ typedef struct {
 //// Declarations ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-typedef struct {
-    union {
-
+struct type_specifier_t {
+    BASE_NODE_LAYOUT
+    enum {
+        VOID,
+        CHAR,
+        SHORT,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        SIGNED,
+        UNSIGNED,
+        BOOL,
+        COMPLEX
     };
-    void* initializer;
+
 };
 
-//typedef struct {
-//    void** declaration_specifiers;
-//} declaration_t;
+struct alignment_specifier_t {
+    BASE_NODE_LAYOUT
+    union {
+        //type-name
+        //constant_expression
+    };
+};
 
-//typedef enum {
-//    VOID,
-//    CHAR,
-//    SHORT,
-//    INT,
-//    LONG,
-//    FLOAT,
-//    DOUBLE,
-//    SIGNED,
-//    UNSIGNED,
-//    BOOL,
-//    COMPLEX
-//} type_specifier_t;
+union declaration_specifier_t {
+    enum storage_specifier_t* storage_specifier;
+    struct type_specifier_t* type_specifier;
+    enum type_qualifier_t* type_qualifier_t;
+    enum func_specifier_t* func_specifier;
+    struct alignment_specifier_t* alignment_specifier_t;
+};
 
-typedef struct {
+struct atomic_type_specifier_t {
     BASE_NODE_LAYOUT
     void* type_name;
-} atomic_type_specifier_t;
+};
 
-typedef enum {
+enum func_specifier_t {
+    INLINE,
+    NORETURN
+};
+
+enum storage_specifier_t {
     TYPEDEF_SPECIFIER,
     EXTERN_SPECIFIER,
     STATIC_SPECIFIER,
     THREAD_LOCAL_SPECIFIER,
     AUTO_SPECIFIER,
     REGISTER_SPECIFIER,
-} storage_specifier_t;
+};
 
-typedef enum {
+enum type_qualifier_t {
     CONST_QUALIFIER,
     RESTRICT_QUALIFIER,
     VOLATILE_QUALIFIER,
     ATOMIC_QUALIFIER,
-} type_qualifier_t;
+};
 
-typedef struct {
+struct enumerator_t {
     char* identifier;
     int* value;
-} enumerator_t;
+};
 
-typedef struct {
+struct enum_specifier_t {
     BASE_NODE_LAYOUT
     char* identifier;
-    enumerator_t* enumerator_list;
-} enum_specifier_t;
+    struct enumerator_t* enumerator_list;
+};
 
-typedef struct {
+struct struct_or_union_t {
     BASE_NODE_LAYOUT
     void** structure_declaration_list_t;
     char* identifier;
-} struct_or_union_t;
+};
+
+struct static_assert_t {
+    BASE_NODE_LAYOUT
+    void* constant_expression;
+    char* string_literal;
+};
+
+struct designator_t {
+    enum {
+        EXPR,
+        IDENT,
+    } tag;
+    union {
+        void* expr;
+        char* identifier;
+    };
+};
+
+struct field_initialize_t {
+    struct designator_t** designator;
+    void* initializer;
+};
+
+struct initializer_list_t {
+    BASE_NODE_LAYOUT
+    struct field_initialize_t** field_int;
+};
 
 //////////////////////////////////////////////////////////////////
 //// Statements //////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-typedef struct {
+struct labeled_stmt_t {
     BASE_NODE_LAYOUT
     char* identifier;
     void* stmt;
-} labeled_stmt_t;
+};
 
-typedef struct {
+struct default_stmt_t {
     BASE_NODE_LAYOUT
     void* stmt;
-} default_stmt_t;
+};
 
-typedef struct {
-    BASE_NODE_LAYOUT
-    void* expr;
-    void* stmt;
-} case_stmt_t;
-
-typedef struct {
+struct case_stmt_t {
     BASE_NODE_LAYOUT
     void* expr;
     void* stmt;
-} if_stmt_t;
+};
 
-typedef struct {
+struct if_stmt_t {
+    BASE_NODE_LAYOUT
+    void* expr;
+    void* stmt;
+};
+
+struct if_else_stmt_t {
     BASE_NODE_LAYOUT
     void* expr;
     void* if_stmt;
     void* else_stmt;
-} if_else_stmt_t;
+};
 
-typedef struct {
+struct switch_stm_t {
     BASE_NODE_LAYOUT
     void* expr;
     void* stmt;
-} switch_stm_t;
+};
 
-typedef struct {
+struct compound_statement_t {
     BASE_NODE_LAYOUT
     void** stmts;
-} compound_statement_t;
+};
 
-typedef struct {
+struct goto_stmt_t {
     BASE_NODE_LAYOUT
     char* identifier;
-} goto_stmt_t;
+};
 
-typedef struct {
+struct continue_stmt_t {
     BASE_NODE_LAYOUT
-} continue_stmt_t;
+};
 
-typedef struct {
+struct break_stmt_t {
     BASE_NODE_LAYOUT
-} break_stmt_t;
+};
 
-typedef struct {
+struct return_stmt_t {
     BASE_NODE_LAYOUT
     void* expr;
-} return_stmt_t;
+};
 
-typedef struct {
+struct while_stmt_t {
     BASE_NODE_LAYOUT
     void* expr;
     void* stmt;
-} while_stmt_t;
+};
 
-typedef struct {
+struct do_while_stmt_t {
     BASE_NODE_LAYOUT
     void* stmt;
     void* expr;
-} do_while_stmt_t;
+};
 
-typedef struct {
+struct for_stmt_t {
     BASE_NODE_LAYOUT
     //TODO
-} for_stmt_t;
+};
 
 //////////////////////////////////////////////////////////////////
 //// Expression //////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-typedef struct {
+struct compound_literal_t {
     BASE_NODE_LAYOUT
     void* type_name;
     void** initializer_list ;
-} compound_literal_t;
+};
 
-typedef struct {
+struct generic_selection_t {
     BASE_NODE_LAYOUT
     //TODO
-} generic_selection_t;
+};
 
-typedef struct {
+struct binary_operator_t {
     BASE_NODE_LAYOUT
     void* lhs;
     void* rhs;
-} binary_operator_t;
+};
 
-typedef struct {
+struct ternary_operator_t {
     BASE_NODE_LAYOUT
     void* expr;
     void* lhs;
     void* rhs;
-} ternary_operator_t;
+};
 
-typedef struct {
+struct unary_operator_t {
     BASE_NODE_LAYOUT
     void* expr;
-} unary_operator_t;
+};
+
+//////////////////////////////////////////////////////////////////
+//// Literals ////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+struct str_literal_t {
+    BASE_NODE_LAYOUT
+    char* str;
+};
+
+struct int_literal_t{
+    BASE_NODE_LAYOUT
+};
 
 #endif //GRIZZLY_AST_TREE_H

@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "../ast/ast_tree.h"
 
-
+/*
 bool is_declaration(const char** str);
 bool is_statement(const char** str);
 
@@ -437,4 +437,4 @@ bool parse_translation_unit(const char* str) {
 void parse(const char* str) {
 
 }
-
+*/

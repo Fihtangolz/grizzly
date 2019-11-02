@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
             arguments.verbose ? "yes" : "no",
             arguments.silent ? "yes" : "no");
 
-    parse("enum tested { ADADAD, ADADAD, }");
+//    parse("enum tested { ADADAD, ADADAD, }");
 
     return EXIT_SUCCESS;
 }
