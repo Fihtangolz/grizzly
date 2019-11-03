@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <string.h>
 
 #include "keywords.h"
@@ -7,7 +6,7 @@
  * KEYWORDS_COUNT)`. If i is -1, then a keyword doesn't exist
  * (`KEYWORD_NONEXISTENT`).
  */
-const char *const keywords[] = {
+static const char *const keywords[] = {
     "auto",       "break",     "case",           "char",
     "const",      "continue",  "default",        "do",
     "double",     "else",      "enum",           "extern",
