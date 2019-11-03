@@ -51,8 +51,8 @@ typedef enum {
 
 #define KEYWORDS_COUNT 44
 
-/* If `text` is a valid keyword, this function return `keyword_t` other than
- * `KEYWORD_NONEXISTENT`, otherwise return `KEYWORD_NONEXISTENT`.
+/* If `text` is a valid keyword, this function returns `keyword_t` other than
+ * `KEYWORD_NONEXISTENT`, otherwise returns `KEYWORD_NONEXISTENT`.
  */
 keyword_t recognise_keyword(const char *text);
 
