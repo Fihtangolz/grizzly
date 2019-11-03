@@ -3,13 +3,14 @@
 
 #include <stddef.h>
 
-typedef enum {
+enum node_type_t {
     IDENTIFIER_STMT,
     COMPOUND_STMT,
     STRUCTURE,
     UNION,
     ENUMERATION,
     ALIGNMENT_SPEC,
+    TRANSLATION_UNIT,
 //Constants
     INT_CONST_STMT,
     FLOAT_CONST_STMT,
@@ -88,17 +89,12 @@ typedef enum {
     CONDITIONAL_OPERATOR,
     SIZEOF_OPERATOR,
     ALIGNOF_OPERATOR,
-} node_type_t;
-
-#define BASE_NODE_LAYOUT node_type_t node_type;
-
-struct base_node_t {
-    node_type_t node_type;
 };
 
-union declaration_t {
-    //TODO: Other
-    struct static_assert_t* static_assert;
+#define BASE_NODE_LAYOUT enum node_type_t node_type;
+
+struct base_node_t {
+    BASE_NODE_LAYOUT
 };
 
 struct translation_unit_t {
@@ -112,17 +108,6 @@ struct array_type_t {
     void* expr; //constant-expression repr length
 };
 
-struct struct_el_t {
-    void* type;
-    char* identifier;
-};
-
-struct bitfield_el_t {
-    void* type;
-    char* identifier;
-    void* expr; //constant-expression repr width
-};
-
 struct type_alias_t {
     BASE_NODE_LAYOUT
     void* type;
@@ -134,43 +119,53 @@ struct signature_t {
     void* params;
 };
 
-typedef struct {
+struct func_definition_t {
     BASE_NODE_LAYOUT
     struct signature_t signature;
 //    statement_t** body;
-} func_definition_t;
+};
 
-typedef struct {
+struct variable_t {
     BASE_NODE_LAYOUT
     char* identifier;
     void* type;
-} variable_t;
+};
 
-typedef struct {
+struct pointer_t {
 //    type_qualifier_t qualifier;
 
-} pointer_t;
+};
 
 //////////////////////////////////////////////////////////////////
 //// Declarations ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
+union declaration_t {
+    //TODO: Other
+    struct static_assert_t* static_assert;
+};
+
 struct type_specifier_t {
     BASE_NODE_LAYOUT
-    enum {
-        VOID,
-        CHAR,
-        SHORT,
-        INT,
-        LONG,
-        FLOAT,
-        DOUBLE,
-        SIGNED,
-        UNSIGNED,
-        BOOL,
-        COMPLEX
-    };
-
+    struct {
+        enum {
+            VOID,
+            CHAR,
+            SHORT,
+            INT,
+            LONG,
+            FLOAT,
+            DOUBLE,
+            SIGNED,
+            UNSIGNED,
+            BOOL,
+            COMPLEX
+        } type;
+    } fundamental_type_t;
+    struct atomic_type_specifier_t* atomic_type_specifier;
+    struct struct_or_union_t* struct_or_union;
+    struct enum_specifier_t* enum_specifier;
+    char* identifier;
 };
 
 struct alignment_specifier_t {
@@ -182,11 +177,11 @@ struct alignment_specifier_t {
 };
 
 union declaration_specifier_t {
-    enum storage_specifier_t* storage_specifier;
-    struct type_specifier_t* type_specifier;
-    enum type_qualifier_t* type_qualifier_t;
-    enum func_specifier_t* func_specifier;
-    struct alignment_specifier_t* alignment_specifier_t;
+        enum storage_specifier_t* storage_specifier;
+        struct type_specifier_t* type_specifier;
+        enum type_qualifier_t* type_qualifier_t;
+        enum func_specifier_t* func_specifier;
+        struct alignment_specifier_t* alignment_specifier_t;
 };
 
 struct atomic_type_specifier_t {
@@ -224,6 +219,17 @@ struct enum_specifier_t {
     BASE_NODE_LAYOUT
     char* identifier;
     struct enumerator_t* enumerator_list;
+};
+
+struct struct_element_t {
+    void* type;
+    char* identifier;
+};
+
+struct bitfield_element_t {
+    void* type;
+    char* identifier;
+    void* expr; //constant-expression repr width
 };
 
 struct struct_or_union_t {
