@@ -19,6 +19,6 @@ void add_qualifier(type_t* target, const qualifier_t qualifier) {
     target->qualifiers |= qualifier;
 }
 
-bool is_conteine_qualifier(type_t* target, const qualifier_t qualifier) {
+bool is_contains_qualifier(type_t* target, const qualifier_t qualifier) {
     return (target->qualifiers & qualifier) == qualifier;
 }
