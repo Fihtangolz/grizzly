@@ -9,6 +9,10 @@ foreach(source_file ${source_files})
 endforeach()
 
 add_executable(grizzly ${source_files})
+# add gtk library
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(deps REQUIRED IMPORTED_TARGET gtk+-3.0)
+target_link_libraries(grizzly PkgConfig::deps)
 
 # first we can indicate the documentation build as an option and set it to OFF by default
 option(BUILD_DOC "Build documentation" OFF)
