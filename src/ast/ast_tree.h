@@ -1,4 +1,4 @@
-#ifndef GRIZZLY_AST_TREE_H
+#ifndef GRIZZLY_AST_TREE_H 
 #define GRIZZLY_AST_TREE_H
 
 #include <stddef.h>
@@ -6,11 +6,15 @@
 enum node_type_t {
     IDENTIFIER_STMT,
     COMPOUND_STMT,
+    COMPOUND_LITERAL,
     STRUCTURE,
     UNION,
     ENUMERATION,
     ALIGNMENT_SPEC,
     TRANSLATION_UNIT,
+    GENERIC_EXPR,
+    STATIC_ASSERT,
+    INITILIAZER_LIST,
 //Constants
     INT_CONST_STMT,
     FLOAT_CONST_STMT,
@@ -30,9 +34,9 @@ enum node_type_t {
     CONTINUE_STMT,
     GOTO_STMT,
 //Selection statements
-    SWITCH_STMT,
     IF_STMT,
-    IF_ELSE_STM,
+    IF_ELSE_STMT,
+    SWITCH_STMT,
 //Operators
     //Assignment
     BASIC_ASSIGNMENT,
@@ -97,9 +101,31 @@ struct base_node_t {
     BASE_NODE_LAYOUT
 };
 
+typedef struct func_definition_t** func_defenitions_t;
+typedef struct func_declaration_t** func_declarations_t;
+
+typedef struct variable_definition_t** var_definitions_t;
+typedef struct variable_declaration_t** var_declarations_t;
+
+typedef struct struct_definition_t** struct_definitions_t;
+typedef struct struct_declaration_t** struct_declarations_t;
+
+typedef struct union_definition_t** union_definitions_t;
+typedef struct union_declaration_t** union_declarations_t;
+
+typedef struct enum_definition_t** enum_definitions;
+
 struct translation_unit_t {
-    struct func_definition_t** func_definitions;
-    union declaration_t** declarations;
+    BASE_NODE_LAYOUT
+//    func_definitions_t func_defs; TODO
+    func_declarations_t func_decs;
+    var_declarations_t var_decs;
+    var_definitions_t var_defs;
+    struct_declarations_t struct_decs;
+    struct_definitions_t struct_defs;
+    union_declarations_t union_decs;
+    union_definitions_t union_defs;
+//    enum_definitions_t enum_defs; TODO
 };
 
 struct array_type_t {
@@ -140,9 +166,6 @@ struct pointer_t {
 //// Generic /////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-/*!
- *
- */
 struct identifier_t {
     BASE_NODE_LAYOUT
     char* data;
@@ -248,7 +271,13 @@ struct bitfield_element_t {
     void* expr; //constant-expression repr width
 };
 
-struct struct_or_union_t {
+struct struct_t {
+    BASE_NODE_LAYOUT
+    void** structure_declaration_list_t;
+    char* identifier;
+};
+
+struct union_t {
     BASE_NODE_LAYOUT
     void** structure_declaration_list_t;
     char* identifier;
@@ -398,22 +427,65 @@ struct unary_operator_t {
 //// Literals ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
+struct char_literal_t {
+    BASE_NODE_LAYOUT
+    char* data;
+};
+
 struct str_literal_t {
     BASE_NODE_LAYOUT
     char* str;
 };
 
 enum int_literal_suffix_t {
-
+    SOME //TODO
 };
 
-/*!
- * Represent
- */
-struct int_literal_t{
+struct float_literal_t {
+    BASE_NODE_LAYOUT
+    void* data;
+};
+
+struct int_literal_t {
     BASE_NODE_LAYOUT
     void* data;
     enum int_literal_suffix_t suffix;
 };
+
+
+struct translation_unit_t* new_translation_unit();
+struct identifier_t* new_identifier();
+//struct declaration_t* new_declaration();
+//fundamental_type_t* new_fundamental_type();
+//type_specifier_t* new_type_specifier();
+//alignment_specifier_t* new_alignment_specifier();
+//atomic_type_specifier_t* new_atomic_type_specifier();
+struct enum_specifier_t* new_enum_specifier();
+struct struct_t* new_struct();
+struct union_t* new_union();
+struct static_assert_t* new_static_assert();
+struct initializer_list_t* new_initializer_list();
+struct labeled_stmt_t* new_labeled_stmt();
+struct default_stmt_t* new_default_stmt();
+struct case_stmt_t* new_case_stmt();
+struct if_stmt_t* new_if_stmt();
+struct if_else_stmt_t* new_if_else_stmt();
+struct switch_stm_t* new_switch_stm();
+struct compound_statement_t* new_compound_statement();
+struct goto_stmt_t* new_goto_stmt();
+struct continue_stmt_t* new_continue_stmt();
+struct break_stmt_t* new_break_stmt();
+struct return_stmt_t* new_return_stmt();
+struct while_stmt_t* new_while_stmt();
+struct do_while_stmt_t* new_do_while_stmt();
+struct for_stmt_t* new_for_stmt();
+struct compound_literal_t* new_compound_literal();
+struct generic_selection_t* new_generic_selection();
+struct binary_operator_t* new_binary_operator();
+struct ternary_operator_t* new_ternary_operator();
+struct unary_operator_t* new_unary_operator();
+struct str_literal_t* new_str_literal();
+struct int_literal_t* new_int_literal();
+struct float_literal_t* new_float_literal();
 
 #endif //GRIZZLY_AST_TREE_H
