@@ -137,6 +137,18 @@ struct pointer_t {
 };
 
 //////////////////////////////////////////////////////////////////
+//// Generic /////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+/*!
+ *
+ */
+struct identifier_t {
+    BASE_NODE_LAYOUT
+    char* data;
+};
+
+//////////////////////////////////////////////////////////////////
 //// Declarations ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
@@ -145,27 +157,30 @@ union declaration_t {
     struct static_assert_t* static_assert;
 };
 
+struct {
+    BASE_NODE_LAYOUT
+    enum {
+        VOID,
+        CHAR,
+        SHORT,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        SIGNED,
+        UNSIGNED,
+        BOOL,
+        COMPLEX,
+        IMAGINARY
+    } type;
+} fundamental_type_t;
+
 struct type_specifier_t {
     BASE_NODE_LAYOUT
-    struct {
-        enum {
-            VOID,
-            CHAR,
-            SHORT,
-            INT,
-            LONG,
-            FLOAT,
-            DOUBLE,
-            SIGNED,
-            UNSIGNED,
-            BOOL,
-            COMPLEX
-        } type;
-    } fundamental_type_t;
     struct atomic_type_specifier_t* atomic_type_specifier;
     struct struct_or_union_t* struct_or_union;
     struct enum_specifier_t* enum_specifier;
-    char* identifier;
+    struct identifier_t* identifier;
 };
 
 struct alignment_specifier_t {
@@ -177,11 +192,12 @@ struct alignment_specifier_t {
 };
 
 union declaration_specifier_t {
-        enum storage_specifier_t* storage_specifier;
-        struct type_specifier_t* type_specifier;
-        enum type_qualifier_t* type_qualifier_t;
-        enum func_specifier_t* func_specifier;
-        struct alignment_specifier_t* alignment_specifier_t;
+    struct fundamental_type_t* fundamental_type;
+    enum storage_specifier_t* storage_specifier;
+    struct type_specifier_t* type_specifier;
+    enum type_qualifier_t* type_qualifier_t;
+    enum func_specifier_t* func_specifier;
+    struct alignment_specifier_t* alignment_specifier_t;
 };
 
 struct atomic_type_specifier_t {
@@ -262,7 +278,7 @@ struct field_initialize_t {
 
 struct initializer_list_t {
     BASE_NODE_LAYOUT
-    struct field_initialize_t** field_int;
+    struct field_initialize_t** field_initialize;
 };
 
 //////////////////////////////////////////////////////////////////
@@ -387,8 +403,17 @@ struct str_literal_t {
     char* str;
 };
 
+enum int_literal_suffix_t {
+
+};
+
+/*!
+ * Represent
+ */
 struct int_literal_t{
     BASE_NODE_LAYOUT
+    void* data;
+    enum int_literal_suffix_t suffix;
 };
 
 #endif //GRIZZLY_AST_TREE_H
