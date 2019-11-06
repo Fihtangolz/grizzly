@@ -1,4 +1,5 @@
 #include "ast_tree.h"
+#include "visitor.h"
 #include "stdio.h"
 
 char* node_type_stringify(enum node_type_t nt) {
@@ -13,7 +14,7 @@ char* node_type_stringify(enum node_type_t nt) {
             return "UNION";
         case ENUMERATION:
             return "ENUMERATION";
-        case ALIGNMENT_SPEC:
+        case TRANSLATION_UNIT:
             return "TRANSLATION_UNIT";
         case GENERIC_EXPR:
             return "GENERIC_EXPR";
@@ -152,6 +153,11 @@ char* node_type_stringify(enum node_type_t nt) {
     }
 }
 
+void base_dumper(struct base_node_t* bn) {
+    printf("%s \n", node_type_stringify(bn->node_type));
+}
+
 void ast_dump(const struct translation_unit_t* tu, FILE* output) {
+    ast_visitor(tu, base_dumper);
     //'|';'-';'`';'-';
 }

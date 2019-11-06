@@ -2,8 +2,10 @@
 #define GRIZZLY_AST_TREE_H
 
 #include <stddef.h>
+#include <glib.h>
 
 enum node_type_t {
+    POINTER,
     IDENTIFIER_STMT,
     COMPOUND_STMT,
     COMPOUND_LITERAL,
@@ -115,9 +117,11 @@ typedef struct union_declaration_t** union_declarations_t;
 
 typedef struct enum_definition_t** enum_definitions;
 
+typedef GList* static_asserts_t;
+
 struct translation_unit_t {
     BASE_NODE_LAYOUT
-//    func_definitions_t func_defs; TODO
+    func_defenitions_t func_defs;
     func_declarations_t func_decs;
     var_declarations_t var_decs;
     var_definitions_t var_defs;
@@ -125,7 +129,8 @@ struct translation_unit_t {
     struct_definitions_t struct_defs;
     union_declarations_t union_decs;
     union_definitions_t union_defs;
-//    enum_definitions_t enum_defs; TODO
+//    enum_definitions_t enum_defs;
+    static_asserts_t static_asserts;
 };
 
 struct array_type_t {
@@ -148,7 +153,7 @@ struct signature_t {
 struct func_definition_t {
     BASE_NODE_LAYOUT
     struct signature_t signature;
-//    statement_t** body;
+    struct statement_t** body;
 };
 
 struct variable_t {
@@ -158,8 +163,8 @@ struct variable_t {
 };
 
 struct pointer_t {
-//    type_qualifier_t qualifier;
-
+    BASE_NODE_LAYOUT
+    enum type_qualifier_t* qualifier;
 };
 
 //////////////////////////////////////////////////////////////////
@@ -286,7 +291,7 @@ struct union_t {
 struct static_assert_t {
     BASE_NODE_LAYOUT
     void* constant_expression;
-    char* string_literal;
+    struct str_literal_t* string_literal;
 };
 
 struct designator_t {
@@ -402,7 +407,8 @@ struct compound_literal_t {
 
 struct generic_selection_t {
     BASE_NODE_LAYOUT
-    //TODO
+    void*  assignment_expression;
+    void* generic_assoc_list;
 };
 
 struct binary_operator_t {
@@ -423,27 +429,61 @@ struct unary_operator_t {
     void* expr;
 };
 
+struct call_operator_t {
+    BASE_NODE_LAYOUT
+    void** expr;
+};
+
 //////////////////////////////////////////////////////////////////
 //// Literals ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
+enum char_literal_prefix_t {
+    CHAR_PREF_NONE,
+    CHAR_PREF_L,
+    CHAR_PREF_LC_U,
+    CHAR_PREF_UC_U,
+};
+
 struct char_literal_t {
     BASE_NODE_LAYOUT
-    char* data;
+    void* data;
+    enum char_literal_prefix_t prefix;
+};
+
+enum str_literal_prefix_t {
+    STR_PREF_NONE,
+    STR_PREF_U8,
+    STR_PREF_LC_U,
+    STR_PREF_UC_U,
+    STR_PREF_L,
 };
 
 struct str_literal_t {
     BASE_NODE_LAYOUT
-    char* str;
+    void* data;
+    enum str_literal_prefix_t prefix;
 };
 
-enum int_literal_suffix_t {
-    SOME //TODO
+enum float_literal_suffix_t {
+    FLOAT_SUF_NONE,
+    FLOAT_SUF_F,
+    FLOAT_SUF_L,
 };
 
 struct float_literal_t {
     BASE_NODE_LAYOUT
     void* data;
+    enum float_literal_suffix_t suffix;
+};
+
+enum int_literal_suffix_t {
+    INT_SUF_NONE,
+    INT_SUF_U,
+    INT_SUF_L,
+    INT_SUF_UL,
+    INT_SUF_LL,
+    INT_SUF_ULL
 };
 
 struct int_literal_t {
@@ -454,12 +494,8 @@ struct int_literal_t {
 
 
 struct translation_unit_t* new_translation_unit();
+struct pointer_t* new_pointer();
 struct identifier_t* new_identifier();
-//struct declaration_t* new_declaration();
-//fundamental_type_t* new_fundamental_type();
-//type_specifier_t* new_type_specifier();
-//alignment_specifier_t* new_alignment_specifier();
-//atomic_type_specifier_t* new_atomic_type_specifier();
 struct enum_specifier_t* new_enum_specifier();
 struct struct_t* new_struct();
 struct union_t* new_union();

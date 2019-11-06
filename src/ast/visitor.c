@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <gmodule.h>
 
+
 struct callbacks {
+    void* data;
+
     void(*handler_int_literal)(struct int_literal_t*);
     void(*handler_float_literal)(struct float_literal_t*);
     void(*handler_char_literal)(struct char_literal_t*);
@@ -13,7 +16,7 @@ struct callbacks {
     void(*handler_switch_stmt)(struct switch_stm_t*);
     void(*handler_initializer_list)(struct initializer_list_t*);
     void(*handler_generic_selection)(struct generic_selection_t*);
-    void(*handler_translation_unit)(struct translation_unit_t*);
+    void(*handler_translation_unit)(void*, struct translation_unit_t*);
     void(*handler_alignment_specifier)(struct alignment_specifier_t*);
     void(*handler_enum_specifier)(struct enum_specifier_t*);
     void(*handler_union)(struct union_t*);
@@ -25,7 +28,7 @@ struct callbacks {
     void(*handler_unary_operator)(struct unary_operator_t*);
     void(*handler_binary_operator)(struct binary_operator_t*);
     void(*handler_compound_stmt)(struct compound_statement_t*);
-    void(*handler_static_assert)(struct static_assert_t*);
+    void(*handler_static_assert)(void*, struct static_assert_t*);
 };
 
 void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
@@ -80,7 +83,7 @@ void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
 
         case TRANSLATION_UNIT: {
             struct translation_unit_t* tu = (struct translation_unit_t*)bn;
-            cb->handler_translation_unit(tu);
+            cb->handler_translation_unit(cb->data, tu);
             break;
         }
 
@@ -92,7 +95,7 @@ void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
 
         case STATIC_ASSERT: {
             struct static_assert_t* sa = (struct static_assert_t*)bn;
-            cb->handler_static_assert(sa);
+            cb->handler_static_assert(cb->data, sa);
             break;
         }
 
@@ -201,6 +204,7 @@ void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
         }
 
         case FUNCTION_CALL: {
+            struct function_call_t* fc = (struct function_call_t*)bn;
             //TODO
             break;
         }
@@ -213,46 +217,52 @@ void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
     }
 }
 
-void filler_translation_unit(struct translation_unit_t* tu) {
-//    tu->enum_defs;
-    tu->func_decs;
-//    tu->func_defs;
-    tu->struct_decs;
-    tu->struct_defs;
-    tu->union_decs;
-    tu->union_defs;
-    tu->var_decs;
-    tu->var_defs;
+void filler_translation_unit(GQueue* queue, struct translation_unit_t* tu) {
+    GList* elem;
+    struct static_assert_t *item;
+    for(elem = tu->static_asserts; elem; elem = elem->next) {
+        item = elem->data;
+        g_queue_push_tail(queue, item);
+    }
+}
+
+void filler_static_assert(GQueue* queue, struct static_assert_t* sa) {
+    sa->constant_expression;
+    sa->string_literal;
 }
 
 void filler_if_stmt(struct if_stmt_t* is) {
-    is->expr;
-    is->stmt;
+//    is->expr;
+//    is->stmt;
 };
 
 void filler_if_else_stmt(struct if_else_stmt_t* ies) {
-    ies->expr;
-    ies->if_stmt;
-    ies->else_stmt;
+//    ies->expr;
+//    ies->if_stmt;
+//    ies->else_stmt;
 }
 
-struct callbacks cr = {
-        .handler_translation_unit = filler_translation_unit,
-        .handler_if_stmt = filler_if_stmt,
-        .handler_if_else_stmt = filler_if_else_stmt,
-};
 
 //TODO: add matcher
 //TODO: add route to node
 //TODO: if we kwon road - lenght
-void ast_visitor(const struct base_node_t* bn) {
+void ast_visitor(const struct base_node_t* bn, void(*func)(struct base_node_t*)) {
     GQueue* queue = g_queue_new();
+    struct callbacks cr = {
+            .data = queue,
+            .handler_translation_unit = filler_translation_unit,
+            .handler_static_assert = filler_static_assert,
+            .handler_if_stmt = filler_if_stmt,
+            .handler_if_else_stmt = filler_if_else_stmt,
+    };
+
     g_queue_push_tail(queue, bn);
 
     struct base_node_t* cur;
-    while(g_queue_is_empty(queue)) {
+    while(!g_queue_is_empty(queue)) {
         cur = g_queue_pop_tail(queue);
         cast_to(cur, &cr);
+        func(cur);
     }
 
     g_queue_free(queue);
