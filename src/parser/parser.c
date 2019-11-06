@@ -1,10 +1,12 @@
 #include <stdbool.h>
 #include <setjmp.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <sys/param.h>
 #include "parser.h"
 #include "../ast/ast_tree.h"
 
-/*
+
 bool is_declaration(const char** str);
 bool is_statement(const char** str);
 
@@ -99,6 +101,7 @@ bool is_type_specifier() {
     (char[]){'u', 'n', 's', 'i', 'g', 'n', 'e', 'd'};
     (char[]){'_', 'B', 'o', 'o', 'l'};
     (char[]){'_', 'C', 'o', 'm', 'p', 'l', 'e', 'x'};
+    (char[]){'_', 'I', 'm', 'a', 'g', 'i', 'n', 'a', 'r', 'y'};
 }
 
 bool is_unary_expression(const char* str) {
@@ -193,12 +196,12 @@ bool is_assignment_expression(const char** str) {
     //unary-expression assignment-operator assignment-expression
 }
 
-generic_selection_t* is_generic_selection(const char* str) {
+struct generic_selection_t* is_generic_selection(const char* str) {
     pstring_t a = {8, (char[]){'_', 'G','e','n','e','r','i','c'}};
     bool flag1 = memcpr(str, a.size, a.body);
     skip_space(&str);
     if(*str != '(') {
-        //TODO: ошибка
+        return NULL;
     }
     skip_space(&str);
     is_assignment_expression(&str);
@@ -222,7 +225,7 @@ generic_selection_t* is_generic_selection(const char* str) {
     }
 }
 
-enum_specifier_t* is_enum_specifier(const char* str) {
+struct enum_specifier_t* is_enum_specifier(const char* str) {
     pstring_t a = {4, (char[]){'e','n','u','m'}};
     bool flag1 = memcpr(str, a.size, a.body);
     str += a.size;
@@ -291,33 +294,91 @@ void is_comment(const char** str) {
     }
 }
 
-bool is_string_literal() {
-    //encoding-prefix_opt
-    pstring_t pref_u8 = {2, (char[]){'u', '8'}};
-    pstring_t pref_u = {1, (char[]){'u'}};
-    pstring_t pref_U = {1, (char[]){'U'}};
-    pstring_t pref_L = {1, (char[]){'L'}};
-    '\"';
-    //s-char-sequence_opt
-    '\"';
+bool is_s_char_sequence() {
+
 }
 
-static_assertion_t* if_static_assert_declaration() {
-    pstring_t sassert = {14, (char[]){'_', 'S', 't', 'a', 't', 'i', 'c', '_', 'a', 's', 's', 'e', 'r', 't'}};
-     '(';
-    is_constant_expression();
-    ',';
-    is_string_literal();
-    ')';
-    ';';
-
-    return NULL; //TODO
-}
-
-type_qualifier_t* is_type_qualifier(const char* str) {
+struct str_literal_t* is_string_literal(const char** str) {
     typedef struct {
         pstring_t pattern;
-        type_qualifier_t type_qualifier;
+        enum str_literal_prefix_t type_qualifier;
+    } compliance_t;
+
+    compliance_t patterns[] = {
+            {
+                    {2, (char[]){'u', '8'}},
+                    STR_PREF_U8
+            },
+            {
+                    {1, (char[]){'u'}},
+                    STR_PREF_LC_U,
+            },
+            {
+                    {1, (char[]){'U'}},
+                    STR_PREF_UC_U
+            },
+            {
+                    {1, (char[]){'L'}},
+                    STR_PREF_L
+            }
+    };
+
+    enum str_literal_prefix_t pref = STR_PREF_NONE;
+    for(const compliance_t* p = patterns; p < patterns+(sizeof(patterns)/sizeof(compliance_t)+1); ++p){
+        if(memcpr(str, p->pattern.size, p->pattern.body)) {
+            pref = p->type_qualifier;
+        }
+    }
+
+    if((*str) != '\"') {
+        return NULL;
+    }
+    is_s_char_sequence();
+    if((*str) != '\"') {
+        return NULL;
+    }
+
+    struct str_literal_t* sl = new_str_literal();
+    sl->data;
+    sl->prefix = pref;
+
+    return sl;
+}
+
+struct static_assert_t* if_static_assert(const char* str) {
+    pstring_t pattern = {14, (char[]){'_', 'S', 't', 'a', 't', 'i', 'c', '_', 'a', 's', 's', 'e', 'r', 't'}};
+    if(!memcpr(str, pattern.size, pattern.body)){
+        return NULL;
+    }
+    str+=pattern.size;
+    if((*str) != '(') {
+        return NULL;
+    }
+//    is_constant_expression();
+    str++;
+    if((*str) != ',') {
+        return NULL;
+    }
+//    struct str_literal_t* sl = is_string_literal(str);
+    str++;
+    if((*str) != ')') {
+        return NULL;
+    }
+    str++;
+    if((*str) != ';') {
+        return NULL;
+    }
+
+    struct static_assert_t* sa = new_static_assert();
+//    sa->string_literal = sl;
+
+    return sa;
+}
+
+enum type_qualifier_t* is_type_qualifier(const char** str) {
+    typedef struct {
+        pstring_t pattern;
+        enum type_qualifier_t type_qualifier;
     } compliance_t;
 
     compliance_t patterns[] = {
@@ -341,16 +402,24 @@ type_qualifier_t* is_type_qualifier(const char* str) {
 
     for(const compliance_t* p = patterns; p < patterns+(sizeof(patterns)/sizeof(compliance_t)+1); ++p){
         if(memcpr(str, p->pattern.size, p->pattern.body)) {
-            return &p->type_qualifier;
+            enum type_qualifier_t* v = malloc(sizeof(enum type_qualifier_t));
+            (*v) = p->type_qualifier;
+            return v;
         }
     }
 
     return NULL;
 }
 
-bool is_pointer(const char** str) {
-    '*';
-    type_qualifier_t* type_qualifier = is_type_qualifier(str); //TODO: optional
+struct pointer_t* is_pointer(const char** str) {
+    if(*str != '*') {
+        return NULL;
+    }
+    enum type_qualifier_t* tq = is_type_qualifier(str);
+    struct pointer_t* v = new_pointer();
+    v->qualifier = tq;
+
+    return v;
 }
 
 bool is_compound_statement(const char* str) {
@@ -376,10 +445,10 @@ bool is_declaration(const char** str) {
     
 }
 
-storage_specifier_t* is_storage_class_specifier(const char* str) {
+enum storage_specifier_t* is_storage_class_specifier(const char* str) {
     typedef struct {
         pstring_t pattern;
-        storage_specifier_t storage_class_specifier;
+        enum storage_specifier_t storage_class_specifier;
     } compliance_t;
 
     compliance_t patterns[] = {
@@ -411,7 +480,9 @@ storage_specifier_t* is_storage_class_specifier(const char* str) {
 
     for(const compliance_t* p = patterns; p < patterns+(sizeof(patterns)/sizeof(compliance_t)+1); ++p){
         if(memcpr(str, p->pattern.size, p->pattern.body)) {
-            return &p->storage_class_specifier;
+            enum storage_specifier_t* v = malloc(sizeof(enum storage_specifier_t));
+            (*v) = p->storage_class_specifier;
+            return v;
         }
     }
 
@@ -419,11 +490,11 @@ storage_specifier_t* is_storage_class_specifier(const char* str) {
 }
 
 bool is_declaration_specifier() {
-    return is_storage_class_specifier() || is_type_specifier() || is_type_qualifier();
+//    return is_storage_class_specifier() || is_type_specifier() || is_type_qualifier();
 }
 
 bool is_function_definition() {
-    return is_declaration_specifier(); is_declarator(); is_declaration(); is_compound_statement();
+//    return is_declaration_specifier(); is_declarator(); is_declaration(); is_compound_statement();
 }
 
 bool is_external_declaration(const char* str) {
@@ -434,7 +505,12 @@ bool parse_translation_unit(const char* str) {
     while(is_external_declaration(str)){}
 }
 
-void parse(const char* str) {
+struct translation_unit_t* parse(const char* str) {
+    struct translation_unit_t* tu = new_translation_unit();
+    struct static_assert_t* sa = if_static_assert(str);
+    if(sa) {
+        g_list_append(tu->static_asserts, sa);
+    }
 
+    return tu;
 }
-*/
