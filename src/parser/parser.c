@@ -27,11 +27,13 @@ typedef struct {
     bool drop_static_assert;
 } config_t;
 
-typedef struct {
+struct parser_t {
+    char* cursor;
+    char buf[1024];
     config_t config;
     state_t* states;
     jmp_buf checkpoint;
-} parser_t;
+} parser;
 
 //TODO: bor
 
@@ -133,7 +135,7 @@ bool is_type_name() {
 
 }
 
-bool is_constant_expression() {
+struct base_node_t* is_constant_expression() {
 
 }
 
@@ -281,11 +283,26 @@ void is_comment(const char** str) {
     }
 }
 
-bool is_s_char_sequence() {
+char* is_s_char_sequence() {
+    //TODO: not implemented escape-sequence
+    char* start = parser.cursor;
+    while(true) {
+        if((*parser.cursor) == '\"' || (*parser.cursor) == '\\' || (*parser.cursor) == '\n') {
+            char* ret = NULL;
+            size_t len =  parser.cursor - start;
+            if(len) {
+                ret = malloc(len+1);
+                memcpy(ret, start, len);
+                ret[len] = '\0';
+            }
 
+            return ret;
+        }
+        parser.cursor++;
+    }
 }
 
-struct str_literal_t* is_string_literal(const char** str) {
+struct str_literal_t* is_string_literal() {
     typedef struct {
         const char *pattern;
         enum str_literal_prefix_t type_qualifier;
@@ -312,58 +329,61 @@ struct str_literal_t* is_string_literal(const char** str) {
 
     enum str_literal_prefix_t pref = STR_PREF_NONE;
     for(int i = 0; i < sizeof(patterns) / sizeof(patterns[0]); i++) {
-        if(is_starts_with(str, patterns[i].pattern)) {
+        if(is_starts_with(parser.cursor, patterns[i].pattern)) {
             pref = patterns[i].type_qualifier;
         }
     }
 
-    if((*str) != '\"') {
+    if((*parser.cursor) != '\"') {
         return NULL;
     }
-    is_s_char_sequence();
-    if((*str) != '\"') {
+    parser.cursor++;
+    char* scs = is_s_char_sequence();
+    if((*parser.cursor) != '\"') {
         return NULL;
     }
 
     struct str_literal_t* sl = new_str_literal();
-    sl->data;
+    sl->data = scs;
     sl->prefix = pref;
 
     return sl;
 }
 
-struct static_assert_t* if_static_assert(const char* str) {
+struct static_assert_t* if_static_assert() {
     const char *pattern = "_Static_assert";
 
-    if(is_starts_with(str, pattern)){
+    if(is_starts_with(parser.cursor, pattern)){
         return NULL;
     }
-    str+=strlen(pattern);
-    if((*str) != '(') {
+    parser.cursor+=strlen(pattern)+1;
+    if((*parser.cursor) != '(') {
         return NULL;
     }
-//    is_constant_expression();
-    str++;
-    if((*str) != ',') {
+    struct base_node_t* ce = is_constant_expression();
+    parser.cursor++;
+    if((*parser.cursor) != ',') {
         return NULL;
     }
-//    struct str_literal_t* sl = is_string_literal(str);
-    str++;
-    if((*str) != ')') {
+    parser.cursor++;
+    struct str_literal_t* sl = is_string_literal();
+    parser.cursor++;
+    if((*parser.cursor) != ')') {
         return NULL;
     }
-    str++;
-    if((*str) != ';') {
+    parser.cursor++;
+    if((*parser.cursor) != ';') {
         return NULL;
     }
 
     struct static_assert_t* sa = new_static_assert();
-//    sa->string_literal = sl;
+    sa->string_literal = sl;
+    sa->constant_expression = ce;
 
     return sa;
 }
 
-enum type_qualifier_t* is_type_qualifier(const char** str) {
+enum type_qualifier_t* is_type_qualifier(const char* str) {
     typedef struct {
         const char *pattern;
         enum type_qualifier_t type_qualifier;
@@ -485,20 +505,37 @@ bool is_function_definition() {
 //    return is_declaration_specifier(); is_declarator(); is_declaration(); is_compound_statement();
 }
 
-bool is_external_declaration(const char* str) {
-    return is_function_definition(str) || is_declaration(str);
-}
-
-bool parse_translation_unit(const char* str) {
-    while(is_external_declaration(str)){}
-}
-
-struct translation_unit_t* parse(const char* str) {
+struct translation_unit_t* parse_translation_unit() {
     struct translation_unit_t* tu = new_translation_unit();
-    struct static_assert_t* sa = if_static_assert(str);
-    if(sa) {
-        g_list_append(tu->static_asserts, sa);
+
+    struct static_assert_t* sa;
+    do{
+        sa = if_static_assert();
+        if(sa) {
+            g_list_append(tu->static_asserts, sa);
+        }
+    }while(sa);
+
+    return tu;
+}
+
+void update__huck(FILE* file) {
+    size_t nread = fread(parser.buf, 1, sizeof(parser.buf), file);
+    if(nread != sizeof(parser.buf) && ferror(file)) {
+        perror("The following error occurred");
+    }
+    parser.cursor = parser.buf;
+}
+
+struct translation_unit_t* parse(const char* target_file) {
+    FILE* file = fopen(target_file, "r");
+    if(!file) {
+
     }
 
+    update__huck(file);
+    struct translation_unit_t* tu = parse_translation_unit();
+
+    fclose(file);
     return tu;
 }
