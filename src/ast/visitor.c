@@ -125,7 +125,9 @@ void cast_to(const struct base_node_t* bn, struct callbacks* cb) {
 
         case STR_CONST_STMT: {
             struct str_literal_t* sl = (struct str_literal_t*)bn;
-            cb->handler_str_literal(sl);
+            if(cb->handler_str_literal) {
+                cb->handler_str_literal(sl);
+            }
             break;
         }
 
@@ -227,8 +229,8 @@ void filler_translation_unit(GQueue* queue, struct translation_unit_t* tu) {
 }
 
 void filler_static_assert(GQueue* queue, struct static_assert_t* sa) {
-    sa->constant_expression;
-    sa->string_literal;
+    g_queue_push_tail(queue, sa->constant_expression);
+    g_queue_push_tail(queue, sa->string_literal);
 }
 
 void filler_if_stmt(struct if_stmt_t* is) {

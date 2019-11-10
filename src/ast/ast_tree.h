@@ -461,7 +461,7 @@ enum str_literal_prefix_t {
 
 struct str_literal_t {
     BASE_NODE_LAYOUT
-    void* data;
+    char* data;
     enum str_literal_prefix_t prefix;
 };
 
