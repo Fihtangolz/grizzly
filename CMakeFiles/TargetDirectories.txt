@@ -1,3 +1,0 @@
-/home/gymmasssorla/Desktop/grizzly/CMakeFiles/rebuild_cache.dir
-/home/gymmasssorla/Desktop/grizzly/CMakeFiles/grizzly.dir
-/home/gymmasssorla/Desktop/grizzly/CMakeFiles/edit_cache.dir
