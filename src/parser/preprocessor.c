@@ -175,7 +175,7 @@ static void append_all_lexemes(GArray *lexemes, const char *text,
         append_all_lexemes(lexemes, temp, next_double_apostrophe, kind);       \
     } while (false)
 
-GArray *preprocessor(const char *const source) {
+GArray *preprocessor(const char *source) {
     GArray *lexemes = g_array_sized_new(
         FALSE, FALSE, sizeof(preprocessor_lexeme_t), DEFAULT_LEXEMES_COUNT);
 
